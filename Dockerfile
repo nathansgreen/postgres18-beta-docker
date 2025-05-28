@@ -3,7 +3,8 @@ ARG PG_VERSION=18beta1
 
 RUN set -ex; \
     apt-get update; \
-    apt-get install -y curl tar git build-essential pkg-config flex bison libreadline-dev zlib1g-dev libicu-dev
+    apt-get install -y curl tar git build-essential pkg-config flex bison libreadline-dev zlib1g-dev libicu-dev \
+        libperl-dev clang llvm-dev liblz4-dev libzstd-dev libcurl4 libssl-dev libcurl4-openssl-dev liburing-dev libxml2-dev
 
 WORKDIR /build
 
@@ -18,7 +19,16 @@ WORKDIR /build/postgresql-${PG_VERSION}
 
 ENV PG_MAJOR=18
 RUN set -ex; \
-    ./configure --prefix=/usr/lib/postgresql/$PG_MAJOR; \
+    ./configure --prefix=/usr/lib/postgresql/$PG_MAJOR \
+        --with-perl \
+        --with-llvm \
+        --with-lz4 \
+        --with-zstd \
+        --with-libcurl \
+        --with-openssl \
+        --with-liburing \
+        --with-libxml \
+    ; \
     make -j $(( $( (echo 2;grep -c ^processor /proc/cpuinfo||:;)|sort -n|tail -1) - 1 )); \
     make install DESTDIR=/build/postgres
 
@@ -84,7 +94,7 @@ ENV PGDATA=/var/lib/postgresql/data
 RUN install --verbose --directory --owner postgres --group postgres --mode 1777 "$PGDATA"
 VOLUME /var/lib/postgresql/data
 
-RUN sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /usr/lib/postgresql/$PG_MAJOR/share/postgresql.conf.sample
+RUN sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /usr/lib/postgresql/18/share/postgresql.conf.sample
 
 COPY --from=build /build/scripts/docker-entrypoint.sh /build/scripts/docker-ensure-initdb.sh /usr/local/bin/
 RUN ln -sT docker-ensure-initdb.sh /usr/local/bin/docker-enforce-initdb.sh
