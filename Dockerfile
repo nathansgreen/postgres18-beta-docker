@@ -16,8 +16,9 @@ RUN set -ex; \
 
 WORKDIR /build/postgresql-${PG_VERSION}
 
+ENV PG_MAJOR=18
 RUN set -ex; \
-    ./configure --prefix=/usr/lib/postgresql/18; \
+    ./configure --prefix=/usr/lib/postgresql/$PG_MAJOR; \
     make; \
     make install DESTDIR=/build/postgres
 
@@ -83,7 +84,7 @@ ENV PGDATA=/var/lib/postgresql/data
 RUN install --verbose --directory --owner postgres --group postgres --mode 1777 "$PGDATA"
 VOLUME /var/lib/postgresql/data
 
-RUN sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /usr/lib/postgresql/18/share/postgresql.conf.sample
+RUN sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /usr/lib/postgresql/$PG_MAJOR/share/postgresql.conf.sample
 
 COPY --from=build /build/scripts/docker-entrypoint.sh /build/scripts/docker-ensure-initdb.sh /usr/local/bin/
 RUN ln -sT docker-ensure-initdb.sh /usr/local/bin/docker-enforce-initdb.sh
