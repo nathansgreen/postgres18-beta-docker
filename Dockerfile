@@ -19,7 +19,7 @@ WORKDIR /build/postgresql-${PG_VERSION}
 ENV PG_MAJOR=18
 RUN set -ex; \
     ./configure --prefix=/usr/lib/postgresql/$PG_MAJOR; \
-    make; \
+    make -j $(( $( (echo 2;grep -c ^processor /proc/cpuinfo||:;)|sort -n|tail -1) - 1 )); \
     make install DESTDIR=/build/postgres
 
 FROM debian:stable-slim AS final
